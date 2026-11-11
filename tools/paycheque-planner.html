@@ -772,14 +772,17 @@ function toast(msg, undo){
 }
 
 /* ---------- sheet ---------- */
+let closeTimer = null;
 function openSheet(html, mount){
+  clearTimeout(closeTimer);
   $('#sheet-body').innerHTML = html; $('#scrim').hidden = false; $('#sheet').hidden = false;
   requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('sheet-open')));
   mount && mount();
 }
 function closeSheet(){
   document.body.classList.remove('sheet-open');
-  setTimeout(() => { $('#scrim').hidden = true; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; }, 300);
+  clearTimeout(closeTimer);
+  closeTimer = setTimeout(() => { $('#scrim').hidden = true; $('#sheet').hidden = true; $('#sheet-body').innerHTML = ''; }, 300);
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
 const segHTML = (id, opts, val) => `<input type="hidden" id="${id}" value="${esc(val)}"><div class="seg" data-seg="${id}">${opts.map(([v,l])=>`<button type="button" class="${v===val?'on':''}" data-act="seg" data-target="${id}" data-v="${v}">${l}</button>`).join('')}</div>`;
@@ -1021,7 +1024,7 @@ const act = {
   log: d => openLog({date:d.date}),
   closeSheet: () => closeSheet(),
   settings: () => openSettings(),
-  newBill: () => { closeSheet(); setTimeout(() => openBill(null), $('#sheet').hidden ? 0 : 320); },
+  newBill: () => openBill(null),
   editBill: d => openBill(S.bills.find(b => b.id === d.id)),
   editLog: d => { const e = S.log.find(x => x.id === d.id); if (e) openLog({entry:e}); },
   togglePaid: (d, el) => {
@@ -1121,7 +1124,7 @@ const act = {
     importFound = null; save(); $('#imp-out').innerHTML = ''; $('#imp-text').value = ''; rerender();
     toast(`Added ${nr} bill${nr===1?'':'s'} and ${nt} entr${nt===1?'y':'ies'}`);
   },
-  clearExample: () => { S = normalize({settings:{...S.settings, payAmount:0, essentials:0}}); ui.periodRef = null; save(); closeSheet(); renderAll(); setTimeout(openSettings, 350); },
+  clearExample: () => { S = normalize({settings:{...S.settings, payAmount:0, essentials:0}}); ui.periodRef = null; save(); renderAll(); openSettings(); },
   resetAll: (d, el) => {
     if (!el.dataset.confirm){ el.dataset.confirm = '1'; el.textContent = 'Tap again to erase all data'; setTimeout(() => { if (el.isConnected){ delete el.dataset.confirm; el.textContent = 'Erase everything'; } }, 3000); return; }
     S = blank(); save(); closeSheet(); renderAll(); toast('Everything erased');
